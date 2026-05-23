@@ -2,10 +2,10 @@ name: Terraform Bootstrap
 
 on:
   pull_request:
-    branches: [main]
+    branches: [develop, main]
     paths: ["bootstrap/**"]
   push:
-    branches: [main]
+    branches: [develop, main]
     paths: ["bootstrap/**"]
   workflow_dispatch:
     inputs:
@@ -113,8 +113,8 @@ jobs:
     name: Apply
     runs-on: ubuntu-latest
     needs: validate
-    if: github.event_name == 'workflow_dispatch'
-    environment: ${{ github.event.inputs.environment }}
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod' || 'dev') }}
     permissions:
       id-token: write
       contents: read
@@ -129,8 +129,13 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ github.event.inputs.environment == 'prod' && secrets.AWS_ROLE_ARN_PROD || secrets.AWS_ROLE_ARN }}
+          role-to-assume: ${{ (github.event.inputs.environment == 'prod' || github.ref == 'refs/heads/main') && secrets.AWS_ROLE_ARN_PROD || secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+
+      - name: 🚀 Despliegue a demanda
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "::notice title=🚀 Despliegue a demanda::Iniciado manualmente por ${{ github.actor }} para el ambiente ${{ github.event.inputs.environment }}"
 
       - name: Init
         run: terraform init
@@ -139,6 +144,6 @@ jobs:
       - name: Apply
         run: |
           terraform apply \
-            -var="environment=${{ github.event.inputs.environment }}" \
+            -var="environment=${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod' || 'dev') }}" \
             -auto-approve
         working-directory: ${{ env.WORKING_DIR }}

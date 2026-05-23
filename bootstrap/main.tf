@@ -5,7 +5,7 @@ provider "aws" {
 data "aws_caller_identity" "current" {}
 
 locals {
-  bucket_name     = "${var.project}-terraform-state-${var.environment}-${data.aws_caller_identity.current.account_id}"
+  bucket_name     = "${var.project}-terraform-state-${var.environment}"
   lock_table_name = "${var.project}-terraform-state-lock-${var.environment}"
 }
 

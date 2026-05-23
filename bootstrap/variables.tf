@@ -17,5 +17,5 @@ variable "environment" {
 variable "project" {
   type        = string
   description = "Project name used for resource naming and tags"
-  default     = "chapa-tu-venta"
+  default     = "ctv"
 }
